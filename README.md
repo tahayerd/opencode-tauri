@@ -34,7 +34,7 @@ curl -fsSL https://opencode.ai/install | bash
 
 ## 🚀 Quick Start (Universal AppImage)
 
-For most Linux distributions, download the pre-built **AppImage** from the [Releases](https://github.com/) page and run:
+For most Linux distributions, download the pre-built **AppImage** from the [Releases](https://github.com/tahayerd/opencode-tauri/releases/latest) page and run:
 
 ```bash
 # Make it executable
