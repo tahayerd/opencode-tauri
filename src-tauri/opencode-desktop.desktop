@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=OpenCode
+Exec=opencode-desktop %U
+Terminal=false
+Type=Application
+Icon=ai.opencode.desktop
+StartupWMClass=ai.opencode.desktop
+Comment=Open source AI coding agent
+Categories=Development;
+MimeType=x-scheme-handler/opencode;

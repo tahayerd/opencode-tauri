@@ -1,0 +1,41 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "OpenCode",
+  "version": "1.18.35",
+  "identifier": "ai.opencode.desktop",
+  "build": {
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [
+      {
+        "label": "main",
+        "title": "OpenCode",
+        "width": 1280,
+        "height": 800,
+        "resizable": true,
+        "decorations": true,
+        "visible": true,
+        "center": false,
+        "dragDropEnabled": false
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["appimage"],
+    "category": "DeveloperTool",
+    "shortDescription": "The open source coding agent",
+    "longDescription": "OpenCode is an open source agent that helps you write code in your terminal, IDE, or desktop.",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.png"
+    ]
+  }
+}

@@ -1,0 +1,22 @@
+# Rust / Cargo
+target/
+**/target/
+**/*.rs.bk
+
+# OS & Editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Logs & temp
+*.log
+*.tmp
+
+# Environment & local files
+.env
+.env.*
+!.env.example
