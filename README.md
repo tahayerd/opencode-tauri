@@ -6,7 +6,7 @@
 
 An ultra-lightweight, high-performance Linux desktop client for [OpenCode](https://github.com/sst/opencode), powered by **Tauri 2 (WebKitGTK)** instead of Electron.
 
-This port preserves 100% of the upstream SolidJS renderer interface while replacing Electron's heavyweight Chromium/Node runtime (~4,000 lines of TypeScript) with a native **Rust / Tauri IPC** bridge.
+This port preserves 100% of the upstream SolidJS renderer interface while replacing Electron's ultra heavyweight Chromium/Node runtime (~4,000 lines of TypeScript) with a native **Rust / Tauri IPC** bridge lol.
 
 ---
 
