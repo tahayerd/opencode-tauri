@@ -14,7 +14,14 @@
 // opencode CLI (v2.0.x) does not implement /api/health or /global/health
 // (it implements /api/info), so intercept loopback health checks so the
 // desktop startup gate succeeds and detects v2 protocol.
-(function shimFetchHealth() {
+// Shim loopback service requests for CLI v2 compatibility:
+// - Health probes: /api/health (200), /global/health (404)
+// - Question requests: /api/question/request (empty list)
+// - Project list: ensure `worktree` is mapped from `canonical` so desktop sync finds project root
+// - Current project: /api/project/current and /project/current routed to /api/location or synthetic project
+// - Project directories: /api/project/:id/directories returns directory array
+// - Path info: /api/path returns directory info
+(function shimFetchLoopback() {
   const originalFetch = window.fetch;
   const patchedFetch = async function (input, init) {
     let url = "";
@@ -55,6 +62,118 @@
           if (u.pathname === "/api/question/request") {
             return new Response(
               JSON.stringify({ location: { directory: "" }, data: [] }),
+              {
+                status: 200,
+                headers: { "Content-Type": "application/json" },
+              }
+            );
+          }
+          if (u.pathname === "/api/project") {
+            const res = await originalFetch.apply(window, arguments);
+            if (res.ok) {
+              try {
+                const projects = await res.json();
+                if (Array.isArray(projects)) {
+                  for (const p of projects) {
+                    if (p.canonical && !p.worktree) {
+                      p.worktree = p.canonical;
+                    }
+                    if (p.worktree && !p.canonical) {
+                      p.canonical = p.worktree;
+                    }
+                    if (!p.sandboxes) {
+                      p.sandboxes = [];
+                    }
+                  }
+                  return new Response(JSON.stringify(projects), {
+                    status: res.status,
+                    statusText: res.statusText,
+                    headers: { "Content-Type": "application/json" },
+                  });
+                }
+              } catch (e) {}
+            }
+            return res;
+          }
+          if (
+            u.pathname === "/api/project/current" ||
+            u.pathname === "/project/current"
+          ) {
+            const dir =
+              u.searchParams.get("location[directory]") ||
+              u.searchParams.get("directory") ||
+              "";
+            try {
+              const locUrl = new URL("/api/location", u.origin);
+              if (dir) {
+                locUrl.searchParams.set("location[directory]", dir);
+              }
+              const locRes = await originalFetch(locUrl.href, init);
+              if (locRes.ok) {
+                const locData = await locRes.json();
+                if (locData && locData.project) {
+                  const proj = locData.project;
+                  return new Response(
+                    JSON.stringify({
+                      id: proj.id,
+                      worktree: proj.directory || proj.canonical || dir,
+                      directory: proj.directory || proj.canonical || dir,
+                      canonical: proj.canonical || proj.directory || dir,
+                      sandboxes: proj.sandboxes || [],
+                    }),
+                    {
+                      status: 200,
+                      headers: { "Content-Type": "application/json" },
+                    }
+                  );
+                }
+              }
+            } catch (e) {}
+            return new Response(
+              JSON.stringify({
+                id: dir
+                  ? "proj_" + btoa(dir).replace(/[^a-zA-Z0-9]/g, "").slice(0, 16)
+                  : "default",
+                worktree: dir,
+                directory: dir,
+                canonical: dir,
+                sandboxes: [],
+              }),
+              {
+                status: 200,
+                headers: { "Content-Type": "application/json" },
+              }
+            );
+          }
+          const projDirsMatch = u.pathname.match(
+            /^\/(?:api\/)?project\/([^/]+)\/directories$/
+          );
+          if (projDirsMatch) {
+            const dir =
+              u.searchParams.get("location[directory]") ||
+              u.searchParams.get("directory") ||
+              "";
+            return new Response(
+              JSON.stringify(dir ? [{ directory: dir }] : []),
+              {
+                status: 200,
+                headers: { "Content-Type": "application/json" },
+              }
+            );
+          }
+          if (u.pathname === "/api/path" || u.pathname === "/path") {
+            const dir =
+              u.searchParams.get("directory") ||
+              u.searchParams.get("location[directory]") ||
+              "";
+            return new Response(
+              JSON.stringify({
+                state: dir,
+                config: dir,
+                worktree: dir,
+                directory: dir,
+                home: "",
+              }),
               {
                 status: 200,
                 headers: { "Content-Type": "application/json" },

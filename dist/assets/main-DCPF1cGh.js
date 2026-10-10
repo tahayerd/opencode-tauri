@@ -56594,7 +56594,7 @@ const loadProjectsQuery = (scope, api) => queryOptions({
   queryKey: [scope, "project"],
   queryFn: () => retry(
     () => api.list().then((projects2) => {
-      return projects2.filter((p2) => !!p2?.id).filter((p2) => !!p2.worktree && !p2.worktree.includes("opencode-test")).map(normalizeProjectInfo).slice().sort((a2, b2) => cmp$2(a2.id, b2.id));
+      return projects2.filter((p2) => !!p2?.id).map((p2) => ({ ...p2, worktree: p2.worktree || p2.canonical })).filter((p2) => !!p2.worktree && !p2.worktree.includes("opencode-test")).map(normalizeProjectInfo).slice().sort((a2, b2) => cmp$2(a2.id, b2.id));
     })
   )
 });
@@ -56619,7 +56619,7 @@ function groupBySession(input2) {
   }, {});
 }
 function projectID(directory, projects2) {
-  return projects2.find((project) => project.worktree === directory || project.sandboxes?.includes(directory))?.id;
+  return projects2.find((project) => (project.worktree || project.canonical) === directory || project.sandboxes?.includes(directory))?.id;
 }
 function mergeSession(setStore, session2) {
   setStore("session", (list2) => {
@@ -56751,7 +56751,7 @@ async function bootstrapDirectory(input2) {
       ),
       !seededProject && (() => retry(() => input2.api.project.current({ location: { directory: input2.directory } })).then(
         (project) => input2.setStore("project", project.id)
-      )),
+      ).catch(() => void 0)),
       !seededPath && (() => input2.queryClient.ensureQueryData(loadPathQuery(input2.scope, input2.directory, input2.sdk, input2.protocol)).then((data) => {
         const next2 = projectID(data.directory ?? input2.directory, input2.global.project);
         if (next2) input2.setStore("project", next2);
