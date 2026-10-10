@@ -51,7 +51,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
+          body_path: RELEASE_NOTES.md
           files: |
             src-tauri/target/release/bundle/appimage/*.AppImage
             src-tauri/target/release/opencode-desktop
-          generate_release_notes: true
