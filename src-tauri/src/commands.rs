@@ -909,6 +909,8 @@ pub fn generate() -> impl Fn(tauri::ipc::Invoke) -> bool {
         open_path,
         reveal_path,
         read_clipboard_image,
+        crate::plugins::get_server_credentials,
+        crate::plugins::plugin_manage,
     ]
 }
 

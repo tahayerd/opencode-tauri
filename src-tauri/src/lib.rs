@@ -2,6 +2,7 @@ mod commands;
 mod drafts;
 mod events;
 mod logging;
+mod plugins;
 mod sidecar;
 mod state;
 mod store;
