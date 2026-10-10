@@ -1143,8 +1143,54 @@
     navContainer.insertBefore(wrapper, insertBeforeItem);
   }
 
+  function attachToHomeUtilityNav() {
+    const buttons = document.querySelectorAll('button');
+    let homeSettingsBtn = null;
+    for (const btn of buttons) {
+      const text = btn.textContent.trim();
+      const isSettingsText = text === 'Ayarlar' || text === 'Settings' || /^(Ayarlar|Settings)$/i.test(text);
+      if (isSettingsText) {
+        const parent = btn.parentElement;
+        if (parent) {
+          const siblingTexts = Array.from(parent.querySelectorAll('button')).map(b => b.textContent.trim());
+          if (siblingTexts.some(t => /Yardım|Help/i.test(t))) {
+            homeSettingsBtn = btn;
+            break;
+          }
+        }
+      }
+    }
+
+    if (!homeSettingsBtn) return;
+    const navContainer = homeSettingsBtn.parentElement;
+    if (!navContainer || navContainer.querySelector('.oc-home-market-btn')) return;
+
+    const marketBtn = document.createElement('button');
+    marketBtn.type = 'button';
+    marketBtn.className =
+      'oc-home-market-btn flex h-7 min-w-0 w-full shrink-0 cursor-pointer items-center gap-2 rounded-[6px] bg-transparent px-1.5 text-left text-v2-text-text-faint [font-weight:440] transition-[background-color,color] duration-[120ms] ease-in-out hover:bg-v2-background-bg-layer-01 hover:text-v2-text-text-base';
+    marketBtn.innerHTML = `
+      <svg data-slot="icon-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; color: var(--v2-icon-icon-muted, #999);">
+        <path d="m16.5 9.4-9-5.19M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+        <polyline points="3.29 7 12 12 20.71 7"/>
+        <line x1="12" y1="22" x2="12" y2="12"/>
+      </svg>
+      <span class="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-[13px]">Plugin Market</span>
+    `;
+    marketBtn.onclick = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      openMarketStandaloneModal();
+    };
+
+    const monitorBtn = navContainer.querySelector('.oc-home-monitor-btn');
+    const insertBeforeItem = monitorBtn || homeSettingsBtn;
+    navContainer.insertBefore(marketBtn, insertBeforeItem);
+  }
+
   // Observe dialog lifecycle and sidebar in DOM
   const observer = new MutationObserver(() => {
+    attachToHomeUtilityNav();
     attachToSidebarRail();
     const dialogs = document.querySelectorAll('.settings-v2-dialog, [data-component="dialog-v2"][data-variant="settings"], .settings-v2');
     for (const dialog of dialogs) {
@@ -1158,6 +1204,7 @@
   });
 
   // Initial scan
+  attachToHomeUtilityNav();
   attachToSidebarRail();
   const existingDialogs = document.querySelectorAll('.settings-v2-dialog, [data-component="dialog-v2"][data-variant="settings"], .settings-v2');
   for (const dialog of existingDialogs) {

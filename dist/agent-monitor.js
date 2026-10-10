@@ -232,8 +232,55 @@
     navContainer.insertBefore(wrapper, targetItem);
   }
 
-  const obs = new MutationObserver(() => attachMonitorRail());
+  function attachToHomeUtilityNav() {
+    const buttons = document.querySelectorAll('button');
+    let homeSettingsBtn = null;
+    for (const btn of buttons) {
+      const text = btn.textContent.trim();
+      const isSettingsText = text === 'Ayarlar' || text === 'Settings' || /^(Ayarlar|Settings)$/i.test(text);
+      if (isSettingsText) {
+        const parent = btn.parentElement;
+        if (parent) {
+          const siblingTexts = Array.from(parent.querySelectorAll('button')).map(b => b.textContent.trim());
+          if (siblingTexts.some(t => /Yardım|Help/i.test(t))) {
+            homeSettingsBtn = btn;
+            break;
+          }
+        }
+      }
+    }
+
+    if (!homeSettingsBtn) return;
+    const navContainer = homeSettingsBtn.parentElement;
+    if (!navContainer || navContainer.querySelector('.oc-home-monitor-btn')) return;
+
+    const monitorBtn = document.createElement('button');
+    monitorBtn.type = 'button';
+    monitorBtn.className =
+      'oc-home-monitor-btn flex h-7 min-w-0 w-full shrink-0 cursor-pointer items-center gap-2 rounded-[6px] bg-transparent px-1.5 text-left text-v2-text-text-faint [font-weight:440] transition-[background-color,color] duration-[120ms] ease-in-out hover:bg-v2-background-bg-layer-01 hover:text-v2-text-text-base';
+    monitorBtn.innerHTML = `
+      <svg data-slot="icon-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; color: var(--v2-icon-icon-muted, #999);">
+        <path d="M12 2a10 10 0 1 0 10 10H12V2z"/>
+        <path d="M12 12 2.1 10.4"/>
+        <path d="M12 12l4.5 8.9"/>
+      </svg>
+      <span class="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-[13px]">Agent Monitor</span>
+    `;
+    monitorBtn.onclick = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      openMonitorModal();
+    };
+
+    navContainer.insertBefore(monitorBtn, homeSettingsBtn);
+  }
+
+  const obs = new MutationObserver(() => {
+    attachToHomeUtilityNav();
+    attachMonitorRail();
+  });
   obs.observe(document.body, { childList: true, subtree: true });
+  attachToHomeUtilityNav();
   attachMonitorRail();
   console.info('[agent-monitor] ready');
 })();
