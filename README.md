@@ -145,6 +145,15 @@ update-desktop-database ~/.local/share/applications/ 2>/dev/null || true
 
 ---
 
+## 🗺️ Roadmap & Upcoming Improvements
+
+- [ ] **File Tree & File Picker Interception (`api-shim.js`):**
+  - Fix `"Dosyalar listelenemedi - Request is not supported by this version of OpenCode Server (Server responded with text/html)"` error when browsing project directory files on OpenCode CLI v2 backend. Shim or route file discovery requests directly to local filesystem IPC when the sidecar lacks native endpoints.
+- [ ] **Packaging & CI:**
+  - Automated GitHub Actions build workflow for AppImage and `.deb` distribution packages.
+
+---
+
 ## 📄 License
 
 This port is distributed under the [MIT License](LICENSE).
