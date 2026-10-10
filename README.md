@@ -158,7 +158,7 @@ update-desktop-database ~/.local/share/applications/ 2>/dev/null || true
 - [ ] **Subagents & Background Processes Monitor Tab:**
   - Add a dedicated sidebar panel tab to monitor running subagents (Pantheon orchestrator, explorer, custom agents) and background tasks in real time, with status indicators, execution progress, live logs, and cancel/stop controls.
 - [ ] **Packaging & CI:**
-  - Automated GitHub Actions build workflow for AppImage and `.deb` distribution packages.
+  - Automated GitHub Actions build workflow for AppImage packages and standalone release artifacts.
 
 ---
 
