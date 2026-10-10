@@ -72105,7 +72105,8 @@ function accepted$1(autoAccept, sessionID, directory) {
   return autoAccept[key2] ?? autoAccept[sessionID];
 }
 function isDirectoryAutoAccepting(autoAccept, directory) {
-  const key2 = directoryAcceptKey(directory);
+  if (autoAccept && autoAccept["*"] !== void 0) return autoAccept["*"];
+  const key2 = directory ? directoryAcceptKey(directory) : "*";
   return autoAccept[key2] ?? false;
 }
 function sessionLineage(session2, sessionID) {
@@ -72126,6 +72127,7 @@ function sessionLineage(session2, sessionID) {
 function autoRespondsPermission(autoAccept, session2, permission, directory) {
   const value = sessionAutoAccept(autoAccept, session2, permission, directory);
   if (value !== void 0) return value;
+  if (autoAccept && autoAccept["*"] !== void 0) return autoAccept["*"];
   return directory ? isDirectoryAutoAccepting(autoAccept, directory) : false;
 }
 function sessionAutoAccept(autoAccept, session2, permission, directory) {
@@ -72266,6 +72268,18 @@ const {
       disableAutoAccept(sessionID, directory) {
         selected().disableAutoAccept(sessionID, directory);
       },
+      isGlobalAutoAccepting() {
+        return selected().isGlobalAutoAccepting?.() ?? false;
+      },
+      setGlobalAutoAccept(checked) {
+        selected().setGlobalAutoAccept?.(checked);
+      },
+      enableDirectory(directory) {
+        selected().enableDirectory?.(directory);
+      },
+      disableDirectory(directory) {
+        selected().disableDirectory?.(directory);
+      },
       permissionsEnabled,
       isPermissionAllowAll(directory) {
         return selected().isPermissionAllowAll(directory);
@@ -72363,11 +72377,13 @@ function createServerPermissionState(input2) {
     })[0].session];
   }
   function isAutoAccepting(sessionID, directory) {
+    if (store2.autoAccept && store2.autoAccept["*"] !== void 0) return store2.autoAccept["*"];
     return autoRespondsPermission(store2.autoAccept, sessions(directory), {
       sessionID
     }, directory);
   }
   function isAutoAcceptingDirectory(directory) {
+    if (store2.autoAccept && store2.autoAccept["*"] !== void 0) return store2.autoAccept["*"];
     return isDirectoryAutoAccepting(store2.autoAccept, directory);
   }
   function shouldAutoRespond(permission, directory) {
@@ -72479,6 +72495,15 @@ function createServerPermissionState(input2) {
       if (meta.disposed) return false;
       return isAutoAcceptingDirectory(directory);
     },
+    isGlobalAutoAccepting: () => !meta.disposed && !!store2.autoAccept["*"],
+    setGlobalAutoAccept(checked) {
+      if (meta.disposed) return;
+      setStore(produce((draft) => {
+        draft.autoAccept["*"] = checked;
+      }));
+    },
+    enableDirectory,
+    disableDirectory,
     toggleAutoAccept(sessionID, directory) {
       if (meta.disposed) return;
       if (isAutoAccepting(sessionID, directory)) {
@@ -100651,7 +100676,9 @@ function LegacyLayout(props) {
     const module = settings.general.newLayoutDesigns() ? __vitePreload(() => import("./index-Dw1FU8Ro.js"), true ? __vite__mapDeps([103,104,105,106,107,108,109,110]) : void 0, import.meta.url) : __vitePreload(() => import("./dialog-settings-BtuufmdO.js"), true ? __vite__mapDeps([111,112,105,107,108,109]) : void 0, import.meta.url);
     void module.then((x2) => {
       if (dialogDead || dialogRun !== run2) return;
-      dialog.show(() => createComponent(x2.DialogSettings, {}));
+      dialog.show(() => createComponent(x2.DialogSettings, {
+        sessionID: params.id
+      }));
     });
   }
   function projectRoot(directory) {

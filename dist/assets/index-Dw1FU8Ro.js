@@ -278,24 +278,45 @@ function createPermissionScopeController(sessionID) {
   const permission = usePermission();
   const serverSync = useServerSync();
   const directory = createMemo(() => {
-    const id = sessionID();
-    if (!id) return void 0;
-    return serverSync().session.lineage.peek(id)?.session.directory;
+    const id = sessionID?.();
+    if (id) {
+      const dir = serverSync().session.lineage.peek(id)?.session.directory;
+      if (dir) return dir;
+    }
+    const projects = serverSync().project;
+    return projects && projects.length > 0 ? projects[0].worktree : void 0;
   });
   return {
     accepting: createMemo(() => {
-      const id = sessionID();
+      if (permission.isGlobalAutoAccepting?.()) return true;
+      const id = sessionID?.();
       const dir = directory();
-      if (!id || !dir) return false;
-      return permission.isAutoAccepting(id, dir);
+      if (id && dir) return permission.isAutoAccepting(id, dir);
+      if (dir) return permission.isAutoAcceptingDirectory(dir);
+      return false;
     }),
-    enabled: createMemo(() => !!directory()),
+    enabled: () => true,
     set: (checked) => {
-      const id = sessionID();
+      permission.setGlobalAutoAccept?.(checked);
+      const id = sessionID?.();
       const dir = directory();
-      if (!id || !dir) return;
-      if (checked) return permission.enableAutoAccept(id, dir);
-      permission.disableAutoAccept(id, dir);
+      if (id && dir) {
+        if (checked) permission.enableAutoAccept(id, dir);
+        else permission.disableAutoAccept(id, dir);
+      }
+      if (dir) {
+        if (checked) permission.enableDirectory?.(dir);
+        else permission.disableDirectory?.(dir);
+      }
+      const projects = serverSync().project;
+      if (Array.isArray(projects)) {
+        for (const p of projects) {
+          if (p && p.worktree) {
+            if (checked) permission.enableDirectory?.(p.worktree);
+            else permission.disableDirectory?.(p.worktree);
+          }
+        }
+      }
     }
   };
 }
@@ -461,7 +482,7 @@ const PermissionScopeSetting = (props) => {
           return props.controller.accepting();
         },
         get disabled() {
-          return !props.controller.enabled();
+          return false;
         },
         get onChange() {
           return props.controller.set;

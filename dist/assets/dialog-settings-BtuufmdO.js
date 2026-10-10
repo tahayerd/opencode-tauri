@@ -42,34 +42,46 @@ const SettingsGeneral = () => {
   const params = useParams();
   const settings = useSettings();
   const updater = useUpdaterAction();
+  const serverSync = useServerSync();
   const linux = createMemo(() => platform.platform === "desktop" && platform.os === "linux");
-  const dir = createMemo(() => decode64(params.dir));
+  const dir = createMemo(() => decode64(params.dir) || serverSync().project?.[0]?.worktree || "");
   const accepting = createMemo(() => {
+    if (permission.isGlobalAutoAccepting?.()) return true;
     const value = dir();
     if (!value) return false;
     if (!params.id) return permission.isAutoAcceptingDirectory(value);
     return permission.isAutoAccepting(params.id, value);
   });
   const toggleAccept = (checked) => {
+    permission.setGlobalAutoAccept?.(checked);
     const value = dir();
-    if (!value) return;
-    if (!params.id) {
-      if (permission.isAutoAcceptingDirectory(value) === checked) return;
-      permission.toggleAutoAcceptDirectory(value);
-      return;
+    if (value) {
+      if (!params.id) {
+        if (checked) permission.enableDirectory?.(value);
+        else permission.disableDirectory?.(value);
+      } else {
+        if (checked) {
+          permission.enableAutoAccept(params.id, value);
+        } else {
+          permission.disableAutoAccept(params.id, value);
+        }
+      }
     }
-    if (checked) {
-      permission.enableAutoAccept(params.id, value);
-      return;
+    const projects = serverSync().project;
+    if (Array.isArray(projects)) {
+      for (const p of projects) {
+        if (p && p.worktree) {
+          if (checked) permission.enableDirectory?.(p.worktree);
+          else permission.disableDirectory?.(p.worktree);
+        }
+      }
     }
-    permission.disableAutoAccept(params.id, value);
   };
   const desktop = createMemo(() => platform.platform === "desktop");
   const themeOptions = createMemo(() => theme.ids().map((id) => ({
     id,
     name: theme.name(id)
   })));
-  const serverSync = useServerSync();
   const serverSdk = useServerSDK();
   const [shells] = createResource(async () => {
     const sdk = serverSdk();
@@ -297,7 +309,7 @@ const SettingsGeneral = () => {
                 return accepting();
               },
               get disabled() {
-                return !dir();
+                return false;
               },
               onChange: toggleAccept
             }));
