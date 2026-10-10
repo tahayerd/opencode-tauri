@@ -153,6 +153,10 @@ update-desktop-database ~/.local/share/applications/ 2>/dev/null || true
   - **Config Key Mismatch (`plugins` vs `plugin`):** CLI `plugin add` writes to the plural `"plugins": [...]` array in `opencode.json`, while the OpenCode runtime reads the singular `"plugin": [...]` array, causing added packages to be ignored. Add automated config key normalization and reconciliation.
   - **Package Dependency Resolution:** Ensure plugins are downloaded/linked into `~/.config/opencode/plugins/node_modules/` if CLI `plugin add` only modifies JSON without executing package retrieval.
   - **Agent Collision & Dependency Warnings:** Warn users when an incoming plugin conflicts with existing agent names (e.g. existing custom `agent.explorer` colliding with plugin agents like Pantheon) or requires dedicated configuration files (e.g. `~/.config/opencode/<plugin>.json` / specific provider credentials).
+- [ ] **Plugin Market Relocation to Main Rail (`sidebar-shell`):**
+  - Move the Plugin Market launcher out of the Settings dialog into the primary navigation sidebar rail, placed directly above the Settings (gear) and Help buttons. Clicking the dedicated plugin icon opens the Market overlay/dialog directly from the home screen.
+- [ ] **Subagents & Background Processes Monitor Tab:**
+  - Add a dedicated sidebar panel tab to monitor running subagents (Pantheon orchestrator, explorer, custom agents) and background tasks in real time, with status indicators, execution progress, live logs, and cancel/stop controls.
 - [ ] **Packaging & CI:**
   - Automated GitHub Actions build workflow for AppImage and `.deb` distribution packages.
 
