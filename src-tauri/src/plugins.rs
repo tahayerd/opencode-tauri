@@ -4,12 +4,84 @@
 //! `opencode` CLI for plugin install/remove — the CLI already knows how to
 //! patch the global config, so we don't duplicate that logic here.
 
+use std::path::{Path, PathBuf};
+use std::collections::HashSet;
 use tokio::process::Command;
 
 use crate::sidecar;
 use crate::state::{AppState, new_token};
 
 const PLUGIN_TIMEOUT_SECS: u64 = 300;
+
+fn get_opencode_config_dir() -> Option<PathBuf> {
+    dirs::config_dir().map(|d| d.join("opencode"))
+}
+
+/// Normalize and reconcile plugins in opencode.json
+/// Ensures both 'plugin' (singular, read by runtime) and 'plugins' (plural, written by CLI) keys exist and match.
+pub fn reconcile_opencode_config() -> Result<(), String> {
+    let Some(cfg_dir) = get_opencode_config_dir() else {
+        return Ok(());
+    };
+    let cfg_file = cfg_dir.join("opencode.json");
+    if !cfg_file.exists() {
+        return Ok(());
+    }
+
+    let content = std::fs::read_to_string(&cfg_file).map_err(|e| e.to_string())?;
+    let mut val: serde_json::Value = serde_json::from_str(&content).map_err(|e| e.to_string())?;
+
+    if let serde_json::Value::Object(ref mut map) = val {
+        let mut plugins_list: Vec<String> = Vec::new();
+        let mut seen = HashSet::new();
+
+        if let Some(serde_json::Value::Array(arr)) = map.get("plugin") {
+            for item in arr {
+                if let Some(s) = item.as_str() {
+                    if seen.insert(s.to_string()) {
+                        plugins_list.push(s.to_string());
+                    }
+                }
+            }
+        }
+
+        if let Some(serde_json::Value::Array(arr)) = map.get("plugins") {
+            for item in arr {
+                if let Some(s) = item.as_str() {
+                    if seen.insert(s.to_string()) {
+                        plugins_list.push(s.to_string());
+                    }
+                }
+            }
+        }
+
+        let arr_json: serde_json::Value = serde_json::json!(plugins_list);
+        map.insert("plugin".to_string(), arr_json.clone());
+        map.insert("plugins".to_string(), arr_json);
+
+        let new_content = serde_json::to_string_pretty(&val).map_err(|e| e.to_string())?;
+        std::fs::write(&cfg_file, new_content).map_err(|e| e.to_string())?;
+        log::info!("[plugins] reconciled opencode.json config keys");
+    }
+    Ok(())
+}
+
+/// Ensure npm package dependencies are installed under ~/.config/opencode/plugins/node_modules
+async fn install_plugin_package_dependencies(package: &str) {
+    let Some(cfg_dir) = get_opencode_config_dir() else { return; };
+    let plugins_dir = cfg_dir.join("plugins");
+    let _ = std::fs::create_dir_all(&plugins_dir);
+
+    log::info!("[plugins] resolving npm dependency for {} in {}", package, plugins_dir.display());
+    let _ = Command::new("npm")
+        .arg("install")
+        .arg("--prefix")
+        .arg(&plugins_dir)
+        .arg(package)
+        .stdin(std::process::Stdio::null())
+        .output()
+        .await;
+}
 
 #[derive(Debug, Clone, serde::Serialize)]
 pub struct ServerCredentials {
@@ -97,6 +169,10 @@ pub async fn plugin_manage(action: String, package: String) -> Result<serde_json
 
     if success {
         log::info!("[plugin-manage:{token}] {action} {package} ok");
+        let _ = reconcile_opencode_config();
+        if action == "add" || action == "update" {
+            install_plugin_package_dependencies(&package).await;
+        }
     } else {
         log::warn!(
             "[plugin-manage:{token}] {action} {package} failed ({}): {stderr}",

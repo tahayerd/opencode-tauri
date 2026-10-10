@@ -846,6 +846,62 @@ pub fn read_clipboard_image() -> Result<Option<serde_json::Value>, String> {
     })))
 }
 
+#[derive(serde::Serialize)]
+pub struct LocalFileEntry {
+    pub name: String,
+    pub path: String,
+    pub r#type: String,
+}
+
+#[tauri::command]
+pub fn list_directory_files(directory: String, path: Option<String>) -> Result<Vec<LocalFileEntry>, String> {
+    let base = PathBuf::from(&directory);
+    let target = match path.filter(|p| !p.trim().is_empty()) {
+        Some(p) => base.join(p),
+        None => base,
+    };
+    if !target.exists() || !target.is_dir() {
+        return Ok(Vec::new());
+    }
+    let mut result = Vec::new();
+    let entries = std::fs::read_dir(&target).map_err(|e| e.to_string())?;
+    for entry in entries.flatten() {
+        let file_name = entry.file_name().to_string_lossy().to_string();
+        if file_name.starts_with(".git") {
+            continue;
+        }
+        let full_path = entry.path();
+        let rel_path = full_path.strip_prefix(&directory)
+            .map(|p| p.to_string_lossy().to_string())
+            .unwrap_or_else(|_| file_name.clone());
+        let is_dir = entry.file_type().map(|t| t.is_dir()).unwrap_or(false);
+        result.push(LocalFileEntry {
+            name: file_name,
+            path: rel_path,
+            r#type: if is_dir { "directory".to_string() } else { "file".to_string() },
+        });
+    }
+    result.sort_by(|a, b| {
+        if a.r#type == b.r#type {
+            a.name.to_lowercase().cmp(&b.name.to_lowercase())
+        } else if a.r#type == "directory" {
+            std::cmp::Ordering::Less
+        } else {
+            std::cmp::Ordering::Greater
+        }
+    });
+    Ok(result)
+}
+
+#[tauri::command]
+pub fn read_file_content(directory: String, path: String) -> Result<String, String> {
+    let full = PathBuf::from(&directory).join(&path);
+    if !full.exists() {
+        return Err(format!("file does not exist: {}", full.display()));
+    }
+    std::fs::read_to_string(&full).map_err(|e| e.to_string())
+}
+
 // ---------------------------------------------------------------------------
 // Registration helper
 // ---------------------------------------------------------------------------
@@ -909,6 +965,8 @@ pub fn generate() -> impl Fn(tauri::ipc::Invoke) -> bool {
         open_path,
         reveal_path,
         read_clipboard_image,
+        list_directory_files,
+        read_file_content,
         crate::plugins::get_server_credentials,
         crate::plugins::plugin_manage,
     ]

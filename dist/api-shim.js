@@ -180,6 +180,50 @@
               }
             );
           }
+          if (u.pathname === "/file" || u.pathname === "/api/file") {
+            const dir =
+              u.searchParams.get("directory") ||
+              u.searchParams.get("location[directory]") ||
+              "";
+            const subPath = u.searchParams.get("path") || "";
+            try {
+              const files = await invoke("list_directory_files", {
+                directory: dir,
+                path: subPath || null,
+              });
+              return new Response(JSON.stringify(files || []), {
+                status: 200,
+                headers: { "Content-Type": "application/json" },
+              });
+            } catch (err) {
+              return new Response(JSON.stringify([]), {
+                status: 200,
+                headers: { "Content-Type": "application/json" },
+              });
+            }
+          }
+          if (u.pathname === "/file/content" || u.pathname === "/api/file/content") {
+            const dir =
+              u.searchParams.get("directory") ||
+              u.searchParams.get("location[directory]") ||
+              "";
+            const subPath = u.searchParams.get("path") || "";
+            try {
+              const content = await invoke("read_file_content", {
+                directory: dir,
+                path: subPath,
+              });
+              return new Response(JSON.stringify(content), {
+                status: 200,
+                headers: { "Content-Type": "application/json" },
+              });
+            } catch (err) {
+              return new Response(JSON.stringify(""), {
+                status: 200,
+                headers: { "Content-Type": "application/json" },
+              });
+            }
+          }
         }
       } catch (err) {}
     }

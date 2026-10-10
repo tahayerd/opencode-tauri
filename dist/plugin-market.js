@@ -979,8 +979,96 @@
     });
   }
 
-  // Observe dialog lifecycle in DOM
+  // ---------------------------------------------------------------------------
+  // Sidebar Rail Integration & Standalone Market Overlay
+  // ---------------------------------------------------------------------------
+  let standaloneModalEl = null;
+
+  function openMarketStandaloneModal() {
+    injectStyles();
+    if (!standaloneModalEl) {
+      standaloneModalEl = document.createElement("div");
+      standaloneModalEl.id = "oc-plugin-market-modal-backdrop";
+      standaloneModalEl.style.cssText = `
+        position: fixed; inset: 0; z-index: 9999;
+        background: rgba(0, 0, 0, 0.65); backdrop-filter: blur(4px);
+        display: flex; align-items: center; justify-content: center;
+      `;
+
+      const container = document.createElement("div");
+      container.style.cssText = `
+        width: 860px; max-width: 92vw; height: 85vh;
+        background: var(--v2-background-bg-base, #18181b);
+        border: 0.5px solid var(--v2-border-border-muted, rgba(255,255,255,0.1));
+        border-radius: 12px; display: flex; flex-direction: column; overflow: hidden;
+        position: relative; box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+      `;
+
+      const closeBtn = document.createElement("button");
+      closeBtn.type = "button";
+      closeBtn.innerHTML = `✕`;
+      closeBtn.style.cssText = `
+        position: absolute; top: 20px; right: 24px; z-index: 20;
+        background: transparent; border: none; font-size: 18px;
+        color: var(--v2-text-text-muted, #999); cursor: pointer;
+      `;
+      closeBtn.onclick = () => {
+        standaloneModalEl.style.display = "none";
+      };
+      container.appendChild(closeBtn);
+
+      const panel = createMarketPanel();
+      panel.style.display = "flex";
+      container.appendChild(panel);
+      standaloneModalEl.appendChild(container);
+      document.body.appendChild(standaloneModalEl);
+
+      marketPanelEl = panel;
+      refreshData();
+    } else {
+      standaloneModalEl.style.display = "flex";
+      refreshData();
+    }
+  }
+
+  function attachToSidebarRail() {
+    const buttons = document.querySelectorAll('button');
+    let settingsBtn = null;
+    for (const btn of buttons) {
+      if (btn.querySelector('svg [d*="M7.62516 4.46094"]') || btn.textContent.includes("Settings")) {
+        settingsBtn = btn;
+        break;
+      }
+    }
+    if (!settingsBtn) return;
+
+    const navContainer = settingsBtn.parentElement;
+    if (!navContainer || navContainer.querySelector('.oc-rail-market-btn')) return;
+
+    const railBtn = document.createElement("button");
+    railBtn.type = "button";
+    railBtn.className = "oc-rail-market-btn " + (settingsBtn.className || "");
+    railBtn.title = "Plugin Market";
+    railBtn.innerHTML = `
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
+        <path d="m16.5 9.4-9-5.19M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+        <polyline points="3.29 7 12 12 20.71 7"/>
+        <line x1="12" y1="22" x2="12" y2="12"/>
+      </svg>
+      <span class="truncate">Market</span>
+    `;
+    railBtn.onclick = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      openMarketStandaloneModal();
+    };
+
+    navContainer.insertBefore(railBtn, settingsBtn);
+  }
+
+  // Observe dialog lifecycle and sidebar in DOM
   const observer = new MutationObserver(() => {
+    attachToSidebarRail();
     const dialogs = document.querySelectorAll('.settings-v2-dialog, [data-component="dialog-v2"][data-variant="settings"], .settings-v2');
     for (const dialog of dialogs) {
       attachToSettingsDialog(dialog);
@@ -992,7 +1080,8 @@
     subtree: true,
   });
 
-  // Initial scan in case settings is already open
+  // Initial scan
+  attachToSidebarRail();
   const existingDialogs = document.querySelectorAll('.settings-v2-dialog, [data-component="dialog-v2"][data-variant="settings"], .settings-v2');
   for (const dialog of existingDialogs) {
     attachToSettingsDialog(dialog);

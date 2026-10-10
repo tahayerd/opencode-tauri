@@ -46,3 +46,12 @@ jobs:
           path: |
             src-tauri/target/release/bundle/appimage/*.AppImage
             src-tauri/target/release/opencode-desktop
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            src-tauri/target/release/bundle/appimage/*.AppImage
+            src-tauri/target/release/opencode-desktop
+          generate_release_notes: true

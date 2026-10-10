@@ -60,6 +60,9 @@ pub fn run() {
                 .drafts
                 .init(data_dir.join("drafts"));
 
+            // Reconcile plugin configuration on startup
+            let _ = crate::plugins::reconcile_opencode_config();
+
             // Spawn the sidecar in the background; the renderer awaits
             // `opencode://ready` via await_initialization.
             let handle = app.handle().clone();
