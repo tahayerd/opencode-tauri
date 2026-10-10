@@ -1,22 +1,15 @@
-## What's Changed in v1.1.6
+## What's Changed in v1.1.7
+
+• **Home Screen (Ana Ekran) Navigation Button Placement**:
+  - Added dedicated launcher buttons for **Plugin Market** and **Agent Monitor** directly into the Home screen project sidebar navigation (`HomeUtilityNav`), seamlessly positioned above Settings ("Ayarlar") and Help ("Yardım").
+  - Matches the exact native layout and styling of OpenCode's home navigation row items (`h-7`, `rounded-[6px]`, label truncation, and subtle hover state).
+  - Maintained accessibility in both Home screen navigation and session/project sidebar rails.
 
 • **WebKitWebProcess SIGILL / Crash Prevention (x86_64 AVX Detection)**:
-  - Resolved desktop crash / freeze caused by WebKitGTK 2.52 JavaScriptCore JIT emitting AVX instructions (`vmovaps`) on x86_64 CPUs without AVX support (e.g. Intel Pentium N3710, Celeron, and older processors).
-  - Added automatic runtime CPU feature check via `std::is_x86_feature_detected!("avx")` that safely disables JavaScriptCore JIT (`JSC_useJIT=0`) on CPUs lacking AVX instructions.
-
-• **Plugin Market Sidebar Rail Relocation & Visibility Fix**:
-  - Fixed Plugin Market disappearing from the interface; properly positioned as an independent launcher on the primary sidebar rail right above Settings and Help.
-  - Fixed button mounting hierarchy: wrapped inside a native `tooltip-trigger` container sibling to prevent SolidJS / Kobalte re-renders from detaching the element.
-  - Replaced crowded text button with native 32x32 `icon-button` (`data-variant="ghost"`, `data-size="large"`) matching OpenCode design system with smooth hover and active feedback.
-  - Added multi-language button detection fallbacks (English, Turkish, etc.).
-  - Added backdrop dismiss and Escape key shortcut to the standalone Plugin Market modal.
-
-• **Subagent & Background Process Monitor Refinements**:
-  - Aligned Subagent & Task Monitor rail button with native 32x32 icon button sizing and styling.
-  - Added backdrop click and Escape key shortcuts for closing the monitor modal.
+  - Runtime CPUID detection via `std::is_x86_feature_detected!("avx")` automatically disables JavaScriptCore JIT (`JSC_useJIT=0`) on CPUs lacking AVX instructions (e.g., Intel Pentium N3710, Celeron).
 
 • **Packaging & Distribution**:
-  - Bumped release version to `1.1.6`.
-  - CI/CD workflow builds Linux standalone binary (`opencode-desktop`) and AppImage.
+  - Bumped release version to `1.1.7`.
+  - Automated release pipeline producing AppImage and standalone Linux executable (`opencode-desktop`).
 
-**Full Changelog**: https://github.com/tahayerd/opencode-tauri/compare/v1.1.5...v1.1.6
+**Full Changelog**: https://github.com/tahayerd/opencode-tauri/compare/v1.1.6...v1.1.7
