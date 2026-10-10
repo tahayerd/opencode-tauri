@@ -52,10 +52,19 @@
               }
             );
           }
+          if (u.pathname === "/api/question/request") {
+            return new Response(
+              JSON.stringify({ location: { directory: "" }, data: [] }),
+              {
+                status: 200,
+                headers: { "Content-Type": "application/json" },
+              }
+            );
+          }
         }
       } catch (err) {}
     }
-    return originalFetch.apply(this, arguments);
+    return originalFetch.apply(window, arguments);
   };
   window.fetch = patchedFetch;
   if (typeof globalThis !== "undefined") {

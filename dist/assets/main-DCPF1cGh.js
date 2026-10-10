@@ -57445,7 +57445,10 @@ function normalizeSessionMessages(sessionID, source) {
     if (message2.type === "assistant") {
       agent = message2.agent;
       model = message2.model;
-      if (!parentID) return;
+      if (!parentID) {
+        const lastUser = messages.findLast((item) => item.role === "user");
+        parentID = lastUser ? lastUser.id : (source.find((item) => item.type === "user")?.id || "msg_root");
+      }
       const parent = messages.findLast((item) => item.id === parentID);
       if (parent?.role === "user") {
         parent.agent = message2.agent;
@@ -58520,6 +58523,23 @@ function createV2SessionReducer() {
     });
     const append2 = (message2) => result(source.some((item) => item.id === message2.id) ? [...source] : [...source, message2], [message2.id]);
     switch (event.type) {
+      case "session.inbox.enqueued": {
+        const item = event.data?.item;
+        const inputID = event.data?.inboxID;
+        if (inputID && item) {
+          const payload = item.payload || {};
+          return append2({
+            id: inputID,
+            type: item.type || "user",
+            metadata: payload.metadata,
+            text: payload.text || "",
+            files: payload.files || [],
+            agents: payload.agents || [],
+            time: { created: event.created || Date.now() }
+          });
+        }
+        return result([...source]);
+      }
       case "session.input.admitted":
         pending2.set(key$1(sessionID, event.data.inputID), event.data.input);
         return result([...source]);
