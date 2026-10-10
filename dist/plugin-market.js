@@ -1023,6 +1023,18 @@
       standaloneModalEl.appendChild(container);
       document.body.appendChild(standaloneModalEl);
 
+      standaloneModalEl.onclick = (e) => {
+        if (e.target === standaloneModalEl) {
+          standaloneModalEl.style.display = "none";
+        }
+      };
+
+      window.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && standaloneModalEl && standaloneModalEl.style.display !== "none") {
+          standaloneModalEl.style.display = "none";
+        }
+      });
+
       marketPanelEl = panel;
       refreshData();
     } else {
@@ -1031,39 +1043,104 @@
     }
   }
 
-  function attachToSidebarRail() {
-    const buttons = document.querySelectorAll('button');
-    let settingsBtn = null;
-    for (const btn of buttons) {
-      if (btn.querySelector('svg [d*="M7.62516 4.46094"]') || btn.textContent.includes("Settings")) {
-        settingsBtn = btn;
-        break;
+  function findSettingsButton() {
+    const byIcon = document.querySelector('button[data-icon="settings-gear"]');
+    if (byIcon) return byIcon;
+
+    const rail = document.querySelector('[data-component="sidebar-rail"]');
+    if (rail) {
+      const byAria = rail.querySelector('button[aria-label*="Setting" i], button[aria-label*="Ayar" i]');
+      if (byAria) return byAria;
+
+      for (const btn of rail.querySelectorAll('button')) {
+        const aria = btn.getAttribute('aria-label') || '';
+        const iconAttr = btn.getAttribute('data-icon') || '';
+        if (
+          iconAttr === 'settings-gear' ||
+          /setting|ayar/i.test(aria) ||
+          btn.querySelector('svg [d*="M7.62516"]') ||
+          btn.querySelector('svg [d*="M7.99998"]')
+        ) {
+          return btn;
+        }
       }
     }
+
+    for (const btn of document.querySelectorAll('button')) {
+      const aria = btn.getAttribute('aria-label') || '';
+      const iconAttr = btn.getAttribute('data-icon') || '';
+      if (
+        iconAttr === 'settings-gear' ||
+        /setting|ayar/i.test(aria) ||
+        btn.querySelector('svg [d*="M7.62516"]') ||
+        btn.querySelector('svg [d*="M7.99998"]')
+      ) {
+        return btn;
+      }
+    }
+    return null;
+  }
+
+  function attachToSidebarRail() {
+    const settingsBtn = findSettingsButton();
     if (!settingsBtn) return;
 
-    const navContainer = settingsBtn.parentElement;
-    if (!navContainer || navContainer.querySelector('.oc-rail-market-btn')) return;
+    const targetItem = settingsBtn.closest('[data-component="tooltip-trigger"]') || settingsBtn;
+    const navContainer = targetItem.parentElement;
+    if (!navContainer || navContainer.querySelector('.oc-rail-market-wrapper')) return;
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "oc-rail-market-wrapper";
+    wrapper.setAttribute("data-component", "tooltip-trigger");
 
     const railBtn = document.createElement("button");
     railBtn.type = "button";
-    railBtn.className = "oc-rail-market-btn " + (settingsBtn.className || "");
+    railBtn.className = "oc-rail-market-btn";
+    railBtn.setAttribute("data-component", "icon-button");
+    railBtn.setAttribute("data-variant", "ghost");
+    railBtn.setAttribute("data-size", "large");
     railBtn.title = "Plugin Market";
+    railBtn.setAttribute("aria-label", "Plugin Market");
+    railBtn.style.cssText = `
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      background: transparent;
+      border: none;
+      color: var(--icon-base, #999);
+      cursor: pointer;
+      transition: background-color 0.15s, color 0.15s;
+    `;
     railBtn.innerHTML = `
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
         <path d="m16.5 9.4-9-5.19M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
         <polyline points="3.29 7 12 12 20.71 7"/>
         <line x1="12" y1="22" x2="12" y2="12"/>
       </svg>
-      <span class="truncate">Market</span>
     `;
+
+    railBtn.onmouseenter = () => {
+      railBtn.style.backgroundColor = "var(--surface-base-hover, rgba(255, 255, 255, 0.08))";
+      railBtn.style.color = "var(--icon-strong-base, #fff)";
+    };
+    railBtn.onmouseleave = () => {
+      railBtn.style.backgroundColor = "transparent";
+      railBtn.style.color = "var(--icon-base, #999)";
+    };
     railBtn.onclick = (e) => {
       e.preventDefault();
       e.stopPropagation();
       openMarketStandaloneModal();
     };
 
-    navContainer.insertBefore(railBtn, settingsBtn);
+    wrapper.appendChild(railBtn);
+
+    const monitorItem = navContainer.querySelector('.oc-rail-monitor-wrapper');
+    const insertBeforeItem = monitorItem || targetItem;
+    navContainer.insertBefore(wrapper, insertBeforeItem);
   }
 
   // Observe dialog lifecycle and sidebar in DOM

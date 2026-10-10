@@ -4,7 +4,7 @@
 //! `opencode` CLI for plugin install/remove — the CLI already knows how to
 //! patch the global config, so we don't duplicate that logic here.
 
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::collections::HashSet;
 use tokio::process::Command;
 

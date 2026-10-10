@@ -112,6 +112,18 @@
         </div>
       `;
       document.body.appendChild(monitorPanelEl);
+      monitorPanelEl.onclick = (e) => {
+        if (e.target === monitorPanelEl) {
+          monitorPanelEl.style.display = 'none';
+          if (pollInterval) clearInterval(pollInterval);
+        }
+      };
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && monitorPanelEl && monitorPanelEl.style.display !== 'none') {
+          monitorPanelEl.style.display = 'none';
+          if (pollInterval) clearInterval(pollInterval);
+        }
+      });
       monitorPanelEl.querySelector('#oc-monitor-close').onclick = () => {
         monitorPanelEl.style.display = 'none';
         if (pollInterval) clearInterval(pollInterval);
@@ -123,37 +135,101 @@
     pollInterval = setInterval(renderMonitorContent, 3000);
   }
 
-  function attachMonitorRail() {
-    const buttons = document.querySelectorAll('button');
-    let settingsBtn = null;
-    for (const btn of buttons) {
-      if (btn.querySelector('svg [d*="M7.62516 4.46094"]') || btn.textContent.includes('Settings')) {
-        settingsBtn = btn;
-        break;
+  function findSettingsButton() {
+    const byIcon = document.querySelector('button[data-icon="settings-gear"]');
+    if (byIcon) return byIcon;
+
+    const rail = document.querySelector('[data-component="sidebar-rail"]');
+    if (rail) {
+      const byAria = rail.querySelector('button[aria-label*="Setting" i], button[aria-label*="Ayar" i]');
+      if (byAria) return byAria;
+
+      for (const btn of rail.querySelectorAll('button')) {
+        const aria = btn.getAttribute('aria-label') || '';
+        const iconAttr = btn.getAttribute('data-icon') || '';
+        if (
+          iconAttr === 'settings-gear' ||
+          /setting|ayar/i.test(aria) ||
+          btn.querySelector('svg [d*="M7.62516"]') ||
+          btn.querySelector('svg [d*="M7.99998"]')
+        ) {
+          return btn;
+        }
       }
     }
+
+    for (const btn of document.querySelectorAll('button')) {
+      const aria = btn.getAttribute('aria-label') || '';
+      const iconAttr = btn.getAttribute('data-icon') || '';
+      if (
+        iconAttr === 'settings-gear' ||
+        /setting|ayar/i.test(aria) ||
+        btn.querySelector('svg [d*="M7.62516"]') ||
+        btn.querySelector('svg [d*="M7.99998"]')
+      ) {
+        return btn;
+      }
+    }
+    return null;
+  }
+
+  function attachMonitorRail() {
+    const settingsBtn = findSettingsButton();
     if (!settingsBtn) return;
-    const navContainer = settingsBtn.parentElement;
-    if (!navContainer || navContainer.querySelector('.oc-rail-monitor-btn')) return;
+
+    const targetItem = settingsBtn.closest('[data-component="tooltip-trigger"]') || settingsBtn;
+    const navContainer = targetItem.parentElement;
+    if (!navContainer || navContainer.querySelector('.oc-rail-monitor-wrapper')) return;
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'oc-rail-monitor-wrapper';
+    wrapper.setAttribute('data-component', 'tooltip-trigger');
 
     monitorRailBtn = document.createElement('button');
     monitorRailBtn.type = 'button';
-    monitorRailBtn.className = 'oc-rail-monitor-btn ' + (settingsBtn.className || '');
+    monitorRailBtn.className = 'oc-rail-monitor-btn';
+    monitorRailBtn.setAttribute('data-component', 'icon-button');
+    monitorRailBtn.setAttribute('data-variant', 'ghost');
+    monitorRailBtn.setAttribute('data-size', 'large');
     monitorRailBtn.title = 'Subagent & Task Monitor';
+    monitorRailBtn.setAttribute('aria-label', 'Subagent & Task Monitor');
+    monitorRailBtn.style.cssText = `
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      background: transparent;
+      border: none;
+      color: var(--icon-base, #999);
+      cursor: pointer;
+      transition: background-color 0.15s, color 0.15s;
+    `;
     monitorRailBtn.innerHTML = `
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
         <path d="M12 2a10 10 0 1 0 10 10H12V2z"/>
         <path d="M12 12 2.1 10.4"/>
         <path d="M12 12l4.5 8.9"/>
       </svg>
-      <span class="truncate">Agents</span>
     `;
+
+    monitorRailBtn.onmouseenter = () => {
+      monitorRailBtn.style.backgroundColor = 'var(--surface-base-hover, rgba(255, 255, 255, 0.08))';
+      monitorRailBtn.style.color = 'var(--icon-strong-base, #fff)';
+    };
+    monitorRailBtn.onmouseleave = () => {
+      monitorRailBtn.style.backgroundColor = 'transparent';
+      monitorRailBtn.style.color = 'var(--icon-base, #999)';
+    };
     monitorRailBtn.onclick = (e) => {
       e.preventDefault();
       e.stopPropagation();
       openMonitorModal();
     };
-    navContainer.insertBefore(monitorRailBtn, settingsBtn);
+
+    wrapper.appendChild(monitorRailBtn);
+    navContainer.insertBefore(wrapper, targetItem);
   }
 
   const obs = new MutationObserver(() => attachMonitorRail());

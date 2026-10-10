@@ -25,6 +25,17 @@ pub fn run() {
         std::env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
     }
 
+    // WebKitGTK / JavaScriptCore JIT can crash with SIGILL (invalid opcode)
+    // on x86_64 CPUs lacking AVX instructions (e.g. Intel Pentium/Celeron).
+    // Safely disable JIT if AVX is not detected.
+    #[cfg(target_arch = "x86_64")]
+    {
+        if std::env::var_os("JSC_useJIT").is_none() && !std::is_x86_feature_detected!("avx") {
+            log::warn!("CPU lacks AVX support; disabling JavaScriptCore JIT (JSC_useJIT=0) to prevent WebKitWebProcess crashes");
+            std::env::set_var("JSC_useJIT", "0");
+        }
+    }
+
     let log_path = logging::init();
     log::info!("opencode desktop (tauri) starting, log: {}", log_path.display());
 
