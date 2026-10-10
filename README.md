@@ -17,6 +17,7 @@ This port preserves 100% of the upstream SolidJS renderer interface while replac
 - **Lightweight Draft Store:** Implements an atomic file-backed key/value and blob store with SHA-256 content-addressed garbage collection, eliminating SQLite dependencies.
 - **Wayland & X11 Native:** Tested and optimized for modern compositors (`niri`, `hyprland`, `sway`, GNOME, KDE), including automatic stability fallbacks for WebKitGTK DMABUF rendering.
 - **100% Upstream Renderer Compatibility:** Bridges the stock OpenCode desktop renderer directly via `api-shim.js` with zero upstream code fork.
+- **Integrated Plugin Market:** Standalone overlay (`dist/plugin-market.js`) that injects a Plugin Market tab into the native Settings dialog. Queries the npm registry for community plugins, lists installed packages via the sidecar API, and delegates install/update/remove operations to the `opencode` CLI.
 
 ---
 
